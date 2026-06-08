@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using SchoolTransport.Application.Interfaces;
 using SchoolTransport.Infrastructure.Context;
+using SchoolTransport.Infrastructure.Repositories;
+using SchoolTransport.Application.DTOs.Auth;
+using SchoolTransport.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,10 +23,15 @@ builder.Services.AddDbContext<SchoolTransportDbContext>(
             builder.Configuration.GetConnectionString(
                 "DefaultConnection"));
     });
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection(
+        "Jwt"));
 
+builder.Services.AddScoped<IJwtService,JwtService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

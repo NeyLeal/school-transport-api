@@ -1,6 +1,6 @@
 ﻿namespace SchoolTransport.Domain.Enums
 {
-    public enum USerRole
+    public enum UserRole
     {
         Admin = 1,
         Driver = 2,
