@@ -10,4 +10,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SchoolTransport.Application\SchoolTransport.Application.csproj" />
+    <ProjectReference Include="..\SchoolTransport.Infrastructure\SchoolTransport.Infrastructure.csproj" />
+    <ProjectReference Include="..\SchoolTransport.Contracts\SchoolTransport.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Consumers\" />
+  </ItemGroup>
 </Project>

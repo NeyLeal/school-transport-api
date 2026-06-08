@@ -1,11 +1,46 @@
 {
   "version": 3,
   "targets": {
-    "net8.0": {}
+    "net8.0": {
+      "SchoolTransport.Contracts/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/SchoolTransport.Contracts.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/SchoolTransport.Contracts.dll": {}
+        }
+      },
+      "SchoolTransport.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/SchoolTransport.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/SchoolTransport.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "SchoolTransport.Contracts/1.0.0": {
+      "type": "project",
+      "path": "../SchoolTransport.Contracts/SchoolTransport.Contracts.csproj",
+      "msbuildProject": "../SchoolTransport.Contracts/SchoolTransport.Contracts.csproj"
+    },
+    "SchoolTransport.Domain/1.0.0": {
+      "type": "project",
+      "path": "../SchoolTransport.Domain/SchoolTransport.Domain.csproj",
+      "msbuildProject": "../SchoolTransport.Domain/SchoolTransport.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net8.0": []
+    "net8.0": [
+      "SchoolTransport.Contracts >= 1.0.0",
+      "SchoolTransport.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\olive\\.nuget\\packages\\": {}
@@ -31,7 +66,14 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Users\\olive\\OneDrive\\Documentos\\Projetos\\school-transport-api\\SchoolTransport.Contracts\\SchoolTransport.Contracts.csproj": {
+              "projectPath": "C:\\Users\\olive\\OneDrive\\Documentos\\Projetos\\school-transport-api\\SchoolTransport.Contracts\\SchoolTransport.Contracts.csproj"
+            },
+            "C:\\Users\\olive\\OneDrive\\Documentos\\Projetos\\school-transport-api\\SchoolTransport.Domain\\SchoolTransport.Domain.csproj": {
+              "projectPath": "C:\\Users\\olive\\OneDrive\\Documentos\\Projetos\\school-transport-api\\SchoolTransport.Domain\\SchoolTransport.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
