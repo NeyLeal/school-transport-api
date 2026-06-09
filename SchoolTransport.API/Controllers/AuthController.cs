@@ -43,13 +43,10 @@ public class AuthController : ControllerBase
                 "Email já cadastrado");
         }
 
+        var passwordHash = PasswordHasher.Hash(dto.Password);
+
         var user =
-            new User(
-                dto.Name,
-                dto.Email,
-                PasswordHasher.Hash(
-                    dto.Password),
-                (int)UserRole.Driver);
+            new User(dto.Name, dto.Email, passwordHash, UserRole.Driver, true, null, null);
 
         await _userRepository
             .CreateAsync(
