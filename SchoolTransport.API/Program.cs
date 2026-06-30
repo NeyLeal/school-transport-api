@@ -85,6 +85,10 @@ builder.Services
 
 builder.Services.AddScoped<IJwtService,JwtService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IGuardianRepository, GuardianRepository>();
+builder.Services.AddScoped<IStudentGuardianRepository, StudentGuardianRpository>();
 
 builder.Services.AddControllers();
 
