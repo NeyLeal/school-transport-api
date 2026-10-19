@@ -1,0 +1,52 @@
+@page "/login"
+@inject ApiClient Api
+@inject SessaoService Sessao
+
+<section class="cartao-acesso">
+    <h1>Entrar</h1>
+    <p class="apoio">Acompanhe as viagens da van escolar.</p>
+
+    <EditForm Model="_modelo" OnValidSubmit="EntrarAsync" FormName="login">
+        <label class="campo">
+            <span>E-mail</span>
+            <InputText type="email" @bind-Value="_modelo.Email" autocomplete="username" required />
+        </label>
+        <label class="campo">
+            <span>Senha</span>
+            <InputText type="password" @bind-Value="_modelo.Senha" autocomplete="current-password" required />
+        </label>
+
+        <Aviso Mensagem="@_erro" />
+
+        <button class="botao-primario largo" type="submit" disabled="@_enviando">
+            @(_enviando ? "Entrando…" : "Entrar")
+        </button>
+    </EditForm>
+
+    <p class="rodape-acesso">É motorista e ainda não tem conta? <a href="cadastro">Criar conta</a></p>
+</section>
+
+@code {
+    private readonly LoginRequest _modelo = new();
+    private string? _erro;
+    private bool _enviando;
+
+    private async Task EntrarAsync()
+    {
+        _erro = null;
+        _enviando = true;
+
+        try
+        {
+            await Sessao.EntrarAsync(await Api.LoginAsync(_modelo));
+        }
+        catch (ApiException ex)
+        {
+            _erro = ex.Message;
+        }
+        finally
+        {
+            _enviando = false;
+        }
+    }
+}

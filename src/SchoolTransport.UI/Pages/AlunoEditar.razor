@@ -1,0 +1,246 @@
+@page "/alunos/novo"
+@page "/alunos/{Id:guid}"
+@inject ApiClient Api
+@inject NavigationManager Navegacao
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <div>
+            <a class="voltar" href="alunos">Alunos</a>
+            <h1>@(Id is null ? "Novo aluno" : _modelo.Nome)</h1>
+        </div>
+        @if (_detalhe is not null)
+        {
+            <button class="botao-texto @(_detalhe.Aluno.Ativo ? "perigo" : null)" @onclick="AlternarAtivoAsync" disabled="@_ocupado">
+                @(_detalhe.Aluno.Ativo ? "Desativar aluno" : "Reativar aluno")
+            </button>
+        }
+    </header>
+
+    <Aviso Mensagem="@_mensagem" Sucesso="@_sucesso" />
+
+    @if (_escolas is { Count: 0 })
+    {
+        <div class="vazio">
+            <p>Antes de cadastrar alunos, <a href="escolas">cadastre uma escola</a>.</p>
+        </div>
+    }
+    else if (_escolas is not null)
+    {
+        <EditForm Model="_modelo" OnValidSubmit="SalvarAsync" class="formulario" FormName="aluno">
+            <label class="campo">
+                <span>Nome do aluno</span>
+                <InputText @bind-Value="_modelo.Nome" required />
+            </label>
+            <div class="linha-campos">
+                <label class="campo">
+                    <span>Escola</span>
+                    <InputSelect @bind-Value="_modelo.EscolaId" required>
+                        <option value="@Guid.Empty">Selecione</option>
+                        @foreach (var escola in _escolas)
+                        {
+                            <option value="@escola.Id">@escola.Nome</option>
+                        }
+                    </InputSelect>
+                </label>
+                <label class="campo">
+                    <span>Data de nascimento</span>
+                    <InputDate @bind-Value="_modelo.DataNascimento" />
+                </label>
+                <label class="campo">
+                    <span>Mensalidade (R$)</span>
+                    <InputNumber @bind-Value="_modelo.ValorMensalidade" step="0.01" min="0" required />
+                </label>
+            </div>
+            <label class="campo">
+                <span>Endereço de busca (ida)</span>
+                <InputText @bind-Value="_modelo.EnderecoPadraoIda" required />
+            </label>
+            <label class="campo">
+                <span>Endereço de entrega (volta)</span>
+                <InputText @bind-Value="_modelo.EnderecoPadraoVolta" required />
+                <button class="botao-texto pequeno" type="button" @onclick="() => _modelo.EnderecoPadraoVolta = _modelo.EnderecoPadraoIda">Usar o mesmo da ida</button>
+            </label>
+            <div class="acoes-formulario">
+                <button class="botao-primario" type="submit" disabled="@_ocupado">@(Id is null ? "Cadastrar aluno" : "Salvar alterações")</button>
+            </div>
+        </EditForm>
+    }
+
+    @if (_detalhe is not null)
+    {
+        <section class="bloco">
+            <h2>Responsáveis</h2>
+
+            @if (_detalhe.Responsaveis.Count == 0)
+            {
+                <p class="apoio">Nenhum responsável vinculado. Vincule alguém para que receba os avisos da viagem.</p>
+            }
+            else
+            {
+                <ul class="lista-simples">
+                    @foreach (var vinculo in _detalhe.Responsaveis)
+                    {
+                        <li>
+                            <div>
+                                <strong>@vinculo.Nome</strong>
+                                <span class="apoio">@Formatos.Parentesco(vinculo.Parentesco), @vinculo.Telefone</span>
+                                <span class="apoio">
+                                    @(vinculo.RecebeNotificacoes ? "Recebe avisos" : "Não recebe avisos").
+                                    @(vinculo.PodeAlterarEndereco ? "Pode alterar endereço." : "Não altera endereço.")
+                                </span>
+                            </div>
+                            <button class="botao-texto perigo" @onclick="() => DesvincularAsync(vinculo.ResponsavelId)" disabled="@_ocupado">Desvincular</button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Disponiveis.Count > 0)
+            {
+                <EditForm Model="_vinculo" OnValidSubmit="VincularAsync" class="formulario-inline" FormName="vinculo">
+                    <label class="campo">
+                        <span>Responsável</span>
+                        <InputSelect @bind-Value="_vinculo.ResponsavelId">
+                            <option value="@Guid.Empty">Selecione</option>
+                            @foreach (var responsavel in Disponiveis)
+                            {
+                                <option value="@responsavel.Id">@responsavel.Nome</option>
+                            }
+                        </InputSelect>
+                    </label>
+                    <label class="campo">
+                        <span>Parentesco</span>
+                        <InputSelect @bind-Value="_vinculo.Parentesco">
+                            @foreach (var parentesco in Enum.GetValues<Parentesco>())
+                            {
+                                <option value="@parentesco">@Formatos.Parentesco(parentesco)</option>
+                            }
+                        </InputSelect>
+                    </label>
+                    <label class="alternador">
+                        <InputCheckbox @bind-Value="_vinculo.RecebeNotificacoes" />
+                        Recebe avisos
+                    </label>
+                    <label class="alternador">
+                        <InputCheckbox @bind-Value="_vinculo.PodeAlterarEndereco" />
+                        Pode alterar endereço
+                    </label>
+                    <div class="acoes-formulario">
+                        <button class="botao-secundario" type="submit" disabled="@(_ocupado || _vinculo.ResponsavelId == Guid.Empty)">Vincular</button>
+                    </div>
+                </EditForm>
+            }
+            else if (_responsaveis.Count == 0)
+            {
+                <p class="apoio"><a href="responsaveis">Cadastre um responsável</a> para vinculá-lo a este aluno.</p>
+            }
+        </section>
+    }
+</section>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private AlunoRequest _modelo = new();
+    private VinculoResponsavelRequest _vinculo = new();
+    private AlunoDetalheResponse? _detalhe;
+    private List<EscolaResponse>? _escolas;
+    private List<ResponsavelResponse> _responsaveis = [];
+    private string? _mensagem;
+    private bool _sucesso;
+    private bool _ocupado;
+
+    private List<ResponsavelResponse> Disponiveis =>
+        _responsaveis.Where(r => _detalhe?.Responsaveis.All(v => v.ResponsavelId != r.Id) ?? false).ToList();
+
+    protected override Task OnParametersSetAsync() => ExecutarAsync(async () =>
+    {
+        _escolas ??= await Api.ListarEscolasAsync();
+
+        if (Id is { } id)
+        {
+            _responsaveis = await Api.ListarResponsaveisAsync();
+            Aplicar(await Api.ObterAlunoAsync(id));
+        }
+        else
+        {
+            _detalhe = null;
+            _modelo = new AlunoRequest { EscolaId = _escolas.Count == 1 ? _escolas[0].Id : Guid.Empty };
+        }
+    });
+
+    private void Aplicar(AlunoDetalheResponse detalhe)
+    {
+        _detalhe = detalhe;
+        var aluno = detalhe.Aluno;
+        _modelo = new AlunoRequest
+        {
+            EscolaId = aluno.EscolaId,
+            Nome = aluno.Nome,
+            DataNascimento = aluno.DataNascimento,
+            ValorMensalidade = aluno.ValorMensalidade,
+            EnderecoPadraoIda = aluno.EnderecoPadraoIda,
+            EnderecoPadraoVolta = aluno.EnderecoPadraoVolta
+        };
+    }
+
+    private Task SalvarAsync() => ExecutarAsync(async () =>
+    {
+        if (Id is { } id)
+        {
+            await Api.AtualizarAlunoAsync(id, _modelo);
+            Aplicar(await Api.ObterAlunoAsync(id));
+            Informar("Dados do aluno salvos.");
+        }
+        else
+        {
+            var aluno = await Api.CriarAlunoAsync(_modelo);
+            Navegacao.NavigateTo($"alunos/{aluno.Id}");
+        }
+    });
+
+    private Task AlternarAtivoAsync() => ExecutarAsync(async () =>
+    {
+        await Api.DefinirAlunoAtivoAsync(Id!.Value, !_detalhe!.Aluno.Ativo);
+        Aplicar(await Api.ObterAlunoAsync(Id.Value));
+    });
+
+    private Task VincularAsync() => ExecutarAsync(async () =>
+    {
+        Aplicar(await Api.VincularResponsavelAsync(Id!.Value, _vinculo));
+        _vinculo = new VinculoResponsavelRequest();
+    });
+
+    private Task DesvincularAsync(Guid responsavelId) => ExecutarAsync(async () =>
+    {
+        await Api.DesvincularResponsavelAsync(Id!.Value, responsavelId);
+        Aplicar(await Api.ObterAlunoAsync(Id.Value));
+    });
+
+    private void Informar(string mensagem)
+    {
+        _mensagem = mensagem;
+        _sucesso = true;
+    }
+
+    private async Task ExecutarAsync(Func<Task> acao)
+    {
+        _mensagem = null;
+        _ocupado = true;
+
+        try
+        {
+            await acao();
+        }
+        catch (ApiException ex)
+        {
+            _mensagem = ex.Message;
+            _sucesso = false;
+        }
+        finally
+        {
+            _ocupado = false;
+        }
+    }
+}

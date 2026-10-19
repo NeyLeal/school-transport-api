@@ -1,0 +1,147 @@
+@page "/viagens"
+@inject ApiClient Api
+@inject SessaoService Sessao
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <div>
+            <h1>Viagens</h1>
+            <p class="apoio">@Formatos.Data(_data)</p>
+        </div>
+        <div class="acoes-cabecalho">
+            <input class="seletor-data" type="date" value="@_data.ToString("yyyy-MM-dd")" @onchange="AlterarDataAsync" aria-label="Data das viagens" />
+            @if (Sessao.EhMotorista)
+            {
+                <button class="botao-secundario" @onclick="GerarAsync" disabled="@_ocupado">Gerar viagens do dia</button>
+            }
+        </div>
+    </header>
+
+    <Aviso Mensagem="@_mensagem" Sucesso="@_sucesso" />
+
+    @if (_viagens is null)
+    {
+        <p class="apoio">Carregando viagens…</p>
+    }
+    else if (_viagens.Count == 0)
+    {
+        <div class="vazio">
+            <p>Nenhuma viagem para este dia.</p>
+            @if (Sessao.EhMotorista)
+            {
+                <p class="apoio">Use "Gerar viagens do dia" para criar uma viagem para cada aluno ativo.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="resumo">
+            <strong>@_viagens.Count(v => v.Etapa == EtapaViagem.Finalizada)</strong> de @_viagens.Count(v => v.Etapa != EtapaViagem.Cancelada) já estão em casa
+        </p>
+
+        <ul class="lista-viagens">
+            @foreach (var viagem in _viagens)
+            {
+                var proxima = Formatos.ProximaAcao(viagem.Etapa);
+                <li class="viagem @(viagem.Etapa == EtapaViagem.Cancelada ? "viagem-ausente" : null)">
+                    <div class="viagem-topo">
+                        <div>
+                            <h2>@viagem.AlunoNome</h2>
+                            <p class="apoio">@viagem.EscolaNome</p>
+                        </div>
+                        <span class="estado">@Formatos.Etapa(viagem.Etapa)</span>
+                    </div>
+
+                    <TrilhaViagem Etapa="viagem.Etapa" />
+
+                    <p class="endereco">
+                        @(viagem.Etapa <= EtapaViagem.EmTransitoParaEscola ? viagem.EnderecoIda : viagem.EnderecoVolta)
+                    </p>
+
+                    @if (proxima is { } acao)
+                    {
+                        <div class="viagem-acoes">
+                            <button class="botao-primario" @onclick="() => RegistrarAsync(viagem, acao.Acao)" disabled="@_ocupado">@acao.Rotulo</button>
+                            @if (viagem.Etapa == EtapaViagem.AguardandoIda && Sessao.EhMotorista)
+                            {
+                                <button class="botao-texto" @onclick="() => AusenciaAsync(viagem)" disabled="@_ocupado">Marcar ausência</button>
+                            }
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private DateOnly _data = DateOnly.FromDateTime(DateTime.Now);
+    private List<ViagemResponse>? _viagens;
+    private string? _mensagem;
+    private bool _sucesso;
+    private bool _ocupado;
+
+    protected override Task OnInitializedAsync() => CarregarAsync();
+
+    private async Task AlterarDataAsync(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value?.ToString(), out var data))
+        {
+            _data = data;
+            await CarregarAsync();
+        }
+    }
+
+    private async Task CarregarAsync()
+    {
+        _viagens = null;
+        await ExecutarAsync(async () => _viagens = await Api.ListarViagensAsync(_data));
+        _viagens ??= [];
+    }
+
+    private Task GerarAsync() => ExecutarAsync(async () =>
+    {
+        var resultado = await Api.GerarViagensAsync(_data);
+        _viagens = await Api.ListarViagensAsync(_data);
+        Informar(resultado.Criadas == 0 ? "Todos os alunos ativos já têm viagem neste dia." : $"{resultado.Criadas} viagens criadas.");
+    });
+
+    private Task RegistrarAsync(ViagemResponse viagem, AcaoViagem acao) => ExecutarAsync(async () =>
+        Substituir(await Api.RegistrarAcaoAsync(viagem.Id, acao)));
+
+    private Task AusenciaAsync(ViagemResponse viagem) => ExecutarAsync(async () =>
+        Substituir(await Api.InformarAusenciaAsync(new PresencaRequest { AlunoId = viagem.AlunoId, Data = viagem.Data })));
+
+    private void Substituir(ViagemResponse atualizada)
+    {
+        var indice = _viagens!.FindIndex(v => v.Id == atualizada.Id);
+        if (indice >= 0)
+            _viagens[indice] = atualizada;
+    }
+
+    private void Informar(string mensagem)
+    {
+        _mensagem = mensagem;
+        _sucesso = true;
+    }
+
+    private async Task ExecutarAsync(Func<Task> acao)
+    {
+        _mensagem = null;
+        _ocupado = true;
+
+        try
+        {
+            await acao();
+        }
+        catch (ApiException ex)
+        {
+            _mensagem = ex.Message;
+            _sucesso = false;
+        }
+        finally
+        {
+            _ocupado = false;
+        }
+    }
+}

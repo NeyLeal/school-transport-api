@@ -1,0 +1,95 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject SessaoService Sessao
+@inject NavigationManager Navegacao
+
+@if (!_carregada)
+{
+    <div class="tela-carregando" role="status">Carregando…</div>
+}
+else if (!Sessao.Autenticado)
+{
+    <main class="publico">
+        <div class="faixa-escolar" aria-hidden="true"></div>
+        <p class="marca marca-publica">SchoolTransport</p>
+        @Body
+    </main>
+}
+else
+{
+    <div class="app">
+        <header class="topo">
+            <div class="faixa-escolar" aria-hidden="true"></div>
+            <div class="topo-conteudo">
+                <span class="marca">SchoolTransport</span>
+                <button class="botao-texto" @onclick="SairAsync">Sair</button>
+            </div>
+        </header>
+
+        <nav class="navegacao" aria-label="Principal">
+            @if (Sessao.EhResponsavel)
+            {
+                <NavLink class="nav-item" href="familia" Match="NavLinkMatch.All">Meus filhos</NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-item" href="viagens">Viagens</NavLink>
+                @if (Sessao.EhMotorista)
+                {
+                    <NavLink class="nav-item" href="alunos">Alunos</NavLink>
+                    <NavLink class="nav-item" href="responsaveis">Responsáveis</NavLink>
+                    <NavLink class="nav-item" href="escolas">Escolas</NavLink>
+                    <NavLink class="nav-item" href="equipe">Equipe</NavLink>
+                }
+            }
+        </nav>
+
+        <main class="conteudo">
+            @Body
+        </main>
+    </div>
+}
+
+@code {
+    private static readonly string[] RotasPublicas = ["login", "cadastro"];
+    private bool _carregada;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Sessao.Alterada += AoAlterarSessao;
+        Navegacao.LocationChanged += AoNavegar;
+        await Sessao.CarregarAsync();
+        _carregada = true;
+        GarantirRotaPermitida();
+    }
+
+    private void AoNavegar(object? sender, LocationChangedEventArgs e) => GarantirRotaPermitida();
+
+    private void AoAlterarSessao()
+    {
+        GarantirRotaPermitida();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void GarantirRotaPermitida()
+    {
+        var rota = Navegacao.ToBaseRelativePath(Navegacao.Uri).Split('?')[0].Trim('/');
+        var publica = RotasPublicas.Contains(rota);
+
+        if (!Sessao.Autenticado && !publica)
+            Navegacao.NavigateTo("login");
+        else if (Sessao.Autenticado && publica)
+            Navegacao.NavigateTo("");
+    }
+
+    private async Task SairAsync()
+    {
+        await Sessao.SairAsync();
+    }
+
+    public void Dispose()
+    {
+        Sessao.Alterada -= AoAlterarSessao;
+        Navegacao.LocationChanged -= AoNavegar;
+    }
+}

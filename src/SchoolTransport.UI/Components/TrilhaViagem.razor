@@ -1,0 +1,29 @@
+<ol class="trilha @(Etapa == EtapaViagem.Cancelada ? "trilha-cancelada" : null)" aria-label="@Formatos.Etapa(Etapa)">
+    @for (var i = 0; i < Paradas.Length; i++)
+    {
+        var indice = i;
+        <li class="parada @Classe(indice)" aria-current="@(indice == Posicao ? "step" : null)">
+            <span class="ponto" aria-hidden="true"></span>
+            <span class="rotulo">@Paradas[indice]</span>
+        </li>
+    }
+</ol>
+
+@code {
+    private static readonly string[] Paradas = ["Casa", "Van", "Escola", "Van", "Casa"];
+
+    [Parameter, EditorRequired] public EtapaViagem Etapa { get; set; }
+
+    private int Posicao => Etapa switch
+    {
+        EtapaViagem.AguardandoIda => 0,
+        EtapaViagem.EmTransitoParaEscola => 1,
+        EtapaViagem.NaEscola => 2,
+        EtapaViagem.EmTransitoParaCasa => 3,
+        EtapaViagem.Finalizada => 4,
+        _ => -1
+    };
+
+    private string Classe(int indice) =>
+        Posicao < 0 ? "futura" : indice < Posicao ? "feita" : indice == Posicao ? "atual" : "futura";
+}

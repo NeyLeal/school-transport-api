@@ -1,0 +1,88 @@
+@page "/equipe"
+@inject ApiClient Api
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <div>
+            <h1>Equipe</h1>
+            <p class="apoio">Ajudantes que acompanham as crianças na van.</p>
+        </div>
+    </header>
+
+    <EditForm Model="_modelo" OnValidSubmit="AdicionarAsync" class="formulario-inline" FormName="ajudante">
+        <label class="campo">
+            <span>Nome</span>
+            <InputText @bind-Value="_modelo.Nome" required />
+        </label>
+        <label class="campo">
+            <span>Telefone</span>
+            <InputText type="tel" @bind-Value="_modelo.Telefone" required />
+        </label>
+        <div class="acoes-formulario">
+            <button class="botao-primario" type="submit" disabled="@_ocupado">Adicionar ajudante</button>
+        </div>
+    </EditForm>
+
+    <Aviso Mensagem="@_erro" />
+
+    @if (_ajudantes is { Count: 0 })
+    {
+        <div class="vazio"><p>Nenhum ajudante cadastrado.</p></div>
+    }
+    else if (_ajudantes is not null)
+    {
+        <ul class="lista-simples">
+            @foreach (var ajudante in _ajudantes)
+            {
+                <li>
+                    <div>
+                        <strong>@ajudante.Nome</strong>
+                        <span class="apoio">@ajudante.Telefone</span>
+                    </div>
+                    <button class="botao-texto perigo" @onclick="() => RemoverAsync(ajudante.Id)">Remover</button>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private AjudanteRequest _modelo = new();
+    private List<AjudanteResponse>? _ajudantes;
+    private string? _erro;
+    private bool _ocupado;
+
+    protected override Task OnInitializedAsync() => ExecutarAsync(async () => _ajudantes = await Api.ListarAjudantesAsync());
+
+    private Task AdicionarAsync() => ExecutarAsync(async () =>
+    {
+        await Api.AdicionarAjudanteAsync(_modelo);
+        _modelo = new AjudanteRequest();
+        _ajudantes = await Api.ListarAjudantesAsync();
+    });
+
+    private Task RemoverAsync(Guid id) => ExecutarAsync(async () =>
+    {
+        await Api.RemoverAjudanteAsync(id);
+        _ajudantes = await Api.ListarAjudantesAsync();
+    });
+
+    private async Task ExecutarAsync(Func<Task> acao)
+    {
+        _erro = null;
+        _ocupado = true;
+
+        try
+        {
+            await acao();
+        }
+        catch (ApiException ex)
+        {
+            _erro = ex.Message;
+        }
+        finally
+        {
+            _ocupado = false;
+        }
+    }
+}

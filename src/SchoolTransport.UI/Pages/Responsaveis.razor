@@ -1,0 +1,146 @@
+@page "/responsaveis"
+@inject ApiClient Api
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <div>
+            <h1>Responsáveis</h1>
+            <p class="apoio">Quem recebe os avisos de embarque e chegada.</p>
+        </div>
+    </header>
+
+    <EditForm Model="_modelo" OnValidSubmit="SalvarAsync" class="formulario-inline" FormName="responsavel">
+        <label class="campo">
+            <span>Nome</span>
+            <InputText @bind-Value="_modelo.Nome" required />
+        </label>
+        <label class="campo">
+            <span>Telefone</span>
+            <InputText type="tel" @bind-Value="_modelo.Telefone" required />
+        </label>
+        <label class="campo">
+            <span>E-mail</span>
+            <InputText type="email" @bind-Value="_modelo.Email" required />
+        </label>
+        <div class="acoes-formulario">
+            <button class="botao-primario" type="submit" disabled="@_ocupado">@(_editandoId is null ? "Adicionar responsável" : "Salvar alterações")</button>
+            @if (_editandoId is not null)
+            {
+                <button class="botao-texto" type="button" @onclick="Limpar">Cancelar</button>
+            }
+        </div>
+    </EditForm>
+
+    <Aviso Mensagem="@_mensagem" Sucesso="@_sucesso" />
+
+    @if (_responsaveis is { Count: 0 })
+    {
+        <div class="vazio"><p>Cadastre os pais ou responsáveis antes de vinculá-los aos alunos.</p></div>
+    }
+    else if (_responsaveis is not null)
+    {
+        <ul class="lista-simples">
+            @foreach (var responsavel in _responsaveis)
+            {
+                <li>
+                    <div>
+                        <strong>@responsavel.Nome</strong>
+                        <span class="apoio">@responsavel.Telefone, @responsavel.Email</span>
+                        @if (responsavel.PossuiAcesso)
+                        {
+                            <span class="selo">Usa o app</span>
+                        }
+                    </div>
+                    <div class="acoes-item">
+                        <button class="botao-texto" @onclick="() => Editar(responsavel)">Editar</button>
+                        @if (!responsavel.PossuiAcesso)
+                        {
+                            <button class="botao-texto" @onclick="() => _acessoPara = responsavel">Liberar acesso</button>
+                        }
+                    </div>
+                    @if (_acessoPara?.Id == responsavel.Id)
+                    {
+                        <form class="acesso" @onsubmit="LiberarAcessoAsync" @onsubmit:preventDefault>
+                            <label class="campo">
+                                <span>Senha inicial para @responsavel.Email</span>
+                                <input type="password" @bind="_senhaAcesso" minlength="6" required autocomplete="new-password" />
+                            </label>
+                            <div class="acoes-formulario">
+                                <button class="botao-primario" type="submit" disabled="@_ocupado">Liberar acesso</button>
+                                <button class="botao-texto" type="button" @onclick="() => _acessoPara = null">Cancelar</button>
+                            </div>
+                        </form>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private ResponsavelRequest _modelo = new();
+    private Guid? _editandoId;
+    private ResponsavelResponse? _acessoPara;
+    private string _senhaAcesso = string.Empty;
+    private List<ResponsavelResponse>? _responsaveis;
+    private string? _mensagem;
+    private bool _sucesso;
+    private bool _ocupado;
+
+    protected override Task OnInitializedAsync() => ExecutarAsync(CarregarAsync);
+
+    private async Task CarregarAsync() => _responsaveis = await Api.ListarResponsaveisAsync();
+
+    private void Editar(ResponsavelResponse responsavel)
+    {
+        _editandoId = responsavel.Id;
+        _modelo = new ResponsavelRequest { Nome = responsavel.Nome, Telefone = responsavel.Telefone, Email = responsavel.Email };
+    }
+
+    private void Limpar()
+    {
+        _editandoId = null;
+        _modelo = new ResponsavelRequest();
+    }
+
+    private Task SalvarAsync() => ExecutarAsync(async () =>
+    {
+        if (_editandoId is { } id)
+            await Api.AtualizarResponsavelAsync(id, _modelo);
+        else
+            await Api.CriarResponsavelAsync(_modelo);
+
+        Limpar();
+        await CarregarAsync();
+    });
+
+    private Task LiberarAcessoAsync() => ExecutarAsync(async () =>
+    {
+        var responsavel = await Api.CriarAcessoResponsavelAsync(_acessoPara!.Id, new CriarAcessoRequest { Senha = _senhaAcesso });
+        _acessoPara = null;
+        _senhaAcesso = string.Empty;
+        await CarregarAsync();
+        _mensagem = $"{responsavel.Nome} já pode entrar com {responsavel.Email}.";
+        _sucesso = true;
+    });
+
+    private async Task ExecutarAsync(Func<Task> acao)
+    {
+        _mensagem = null;
+        _ocupado = true;
+
+        try
+        {
+            await acao();
+        }
+        catch (ApiException ex)
+        {
+            _mensagem = ex.Message;
+            _sucesso = false;
+        }
+        finally
+        {
+            _ocupado = false;
+        }
+    }
+}

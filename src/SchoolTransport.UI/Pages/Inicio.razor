@@ -1,0 +1,11 @@
+@page "/"
+@inject SessaoService Sessao
+@inject NavigationManager Navegacao
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (Sessao.Autenticado)
+            Navegacao.NavigateTo(Sessao.EhResponsavel ? "familia" : "viagens", replace: true);
+    }
+}

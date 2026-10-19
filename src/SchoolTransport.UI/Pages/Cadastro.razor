@@ -1,0 +1,67 @@
+@page "/cadastro"
+@inject ApiClient Api
+@inject SessaoService Sessao
+
+<section class="cartao-acesso">
+    <h1>Criar conta de motorista</h1>
+    <p class="apoio">Depois do cadastro você poderá registrar escolas, alunos e responsáveis.</p>
+
+    <EditForm Model="_modelo" OnValidSubmit="CadastrarAsync" FormName="cadastro">
+        <label class="campo">
+            <span>Nome completo</span>
+            <InputText @bind-Value="_modelo.Nome" autocomplete="name" required />
+        </label>
+        <label class="campo">
+            <span>E-mail</span>
+            <InputText type="email" @bind-Value="_modelo.Email" autocomplete="email" required />
+        </label>
+        <div class="linha-campos">
+            <label class="campo">
+                <span>Telefone</span>
+                <InputText type="tel" @bind-Value="_modelo.Telefone" autocomplete="tel" required />
+            </label>
+            <label class="campo">
+                <span>CNH</span>
+                <InputText @bind-Value="_modelo.Cnh" inputmode="numeric" required />
+            </label>
+        </div>
+        <label class="campo">
+            <span>Senha</span>
+            <InputText type="password" @bind-Value="_modelo.Senha" autocomplete="new-password" minlength="6" required />
+            <small>Mínimo de 6 caracteres.</small>
+        </label>
+
+        <Aviso Mensagem="@_erro" />
+
+        <button class="botao-primario largo" type="submit" disabled="@_enviando">
+            @(_enviando ? "Criando conta…" : "Criar conta")
+        </button>
+    </EditForm>
+
+    <p class="rodape-acesso">Já tem conta? <a href="login">Entrar</a></p>
+</section>
+
+@code {
+    private readonly RegistrarMotoristaRequest _modelo = new();
+    private string? _erro;
+    private bool _enviando;
+
+    private async Task CadastrarAsync()
+    {
+        _erro = null;
+        _enviando = true;
+
+        try
+        {
+            await Sessao.EntrarAsync(await Api.RegistrarMotoristaAsync(_modelo));
+        }
+        catch (ApiException ex)
+        {
+            _erro = ex.Message;
+        }
+        finally
+        {
+            _enviando = false;
+        }
+    }
+}

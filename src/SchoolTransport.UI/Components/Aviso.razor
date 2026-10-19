@@ -1,0 +1,9 @@
+@if (!string.IsNullOrWhiteSpace(Mensagem))
+{
+    <p class="aviso @(Sucesso ? "aviso-ok" : "aviso-erro")" role="@(Sucesso ? "status" : "alert")">@Mensagem</p>
+}
+
+@code {
+    [Parameter] public string? Mensagem { get; set; }
+    [Parameter] public bool Sucesso { get; set; }
+}

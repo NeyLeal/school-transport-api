@@ -1,0 +1,107 @@
+@page "/escolas"
+@inject ApiClient Api
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <h1>Escolas</h1>
+    </header>
+
+    <EditForm Model="_modelo" OnValidSubmit="SalvarAsync" class="formulario-inline" FormName="escola">
+        <label class="campo">
+            <span>Nome da escola</span>
+            <InputText @bind-Value="_modelo.Nome" required />
+        </label>
+        <label class="campo">
+            <span>Endereço</span>
+            <InputText @bind-Value="_modelo.Endereco" required />
+        </label>
+        <div class="acoes-formulario">
+            <button class="botao-primario" type="submit" disabled="@_ocupado">@(_editandoId is null ? "Adicionar escola" : "Salvar alterações")</button>
+            @if (_editandoId is not null)
+            {
+                <button class="botao-texto" type="button" @onclick="Limpar">Cancelar</button>
+            }
+        </div>
+    </EditForm>
+
+    <Aviso Mensagem="@_erro" />
+
+    @if (_escolas is { Count: 0 })
+    {
+        <div class="vazio"><p>Cadastre a primeira escola atendida pela sua van.</p></div>
+    }
+    else if (_escolas is not null)
+    {
+        <ul class="lista-simples">
+            @foreach (var escola in _escolas)
+            {
+                <li>
+                    <div>
+                        <strong>@escola.Nome</strong>
+                        <span class="apoio">@escola.Endereco</span>
+                    </div>
+                    <button class="botao-texto" @onclick="() => Editar(escola)">Editar</button>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private EscolaRequest _modelo = new();
+    private Guid? _editandoId;
+    private List<EscolaResponse>? _escolas;
+    private string? _erro;
+    private bool _ocupado;
+
+    protected override async Task OnInitializedAsync() => await CarregarAsync();
+
+    private async Task CarregarAsync()
+    {
+        try
+        {
+            _escolas = await Api.ListarEscolasAsync();
+        }
+        catch (ApiException ex)
+        {
+            _erro = ex.Message;
+        }
+    }
+
+    private void Editar(EscolaResponse escola)
+    {
+        _editandoId = escola.Id;
+        _modelo = new EscolaRequest { Nome = escola.Nome, Endereco = escola.Endereco };
+    }
+
+    private void Limpar()
+    {
+        _editandoId = null;
+        _modelo = new EscolaRequest();
+    }
+
+    private async Task SalvarAsync()
+    {
+        _erro = null;
+        _ocupado = true;
+
+        try
+        {
+            if (_editandoId is { } id)
+                await Api.AtualizarEscolaAsync(id, _modelo);
+            else
+                await Api.CriarEscolaAsync(_modelo);
+
+            Limpar();
+            await CarregarAsync();
+        }
+        catch (ApiException ex)
+        {
+            _erro = ex.Message;
+        }
+        finally
+        {
+            _ocupado = false;
+        }
+    }
+}

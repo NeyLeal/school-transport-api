@@ -1,0 +1,181 @@
+@page "/familia"
+@inject ApiClient Api
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <div>
+            <h1>Meus filhos</h1>
+            <p class="apoio">@Formatos.Data(DateOnly.FromDateTime(DateTime.Now))</p>
+        </div>
+        <button class="botao-secundario" @onclick="CarregarAsync" disabled="@_ocupado">Atualizar</button>
+    </header>
+
+    <Aviso Mensagem="@_mensagem" Sucesso="@_sucesso" />
+
+    @if (_alunos is { Count: 0 })
+    {
+        <div class="vazio"><p>Nenhum aluno vinculado a você. Fale com o motorista da van.</p></div>
+    }
+    else if (_alunos is not null)
+    {
+        <ul class="lista-viagens">
+            @foreach (var aluno in _alunos)
+            {
+                var viagem = aluno.ViagemDeHoje;
+                <li class="viagem @(viagem?.Etapa == EtapaViagem.Cancelada ? "viagem-ausente" : null)">
+                    <div class="viagem-topo">
+                        <div>
+                            <h2>@aluno.Nome</h2>
+                            <p class="apoio">@aluno.EscolaNome</p>
+                        </div>
+                        <span class="estado">@(viagem is null ? "Sem viagem hoje" : Formatos.Etapa(viagem.Etapa))</span>
+                    </div>
+
+                    @if (viagem is not null)
+                    {
+                        <TrilhaViagem Etapa="viagem.Etapa" />
+                        <p class="horarios">
+                            @if (viagem.HorarioEntradaVanIda is not null) { <span>Embarcou às @Formatos.Hora(viagem.HorarioEntradaVanIda)</span> }
+                            @if (viagem.HorarioChegadaEscola is not null) { <span>Chegou à escola às @Formatos.Hora(viagem.HorarioChegadaEscola)</span> }
+                            @if (viagem.HorarioEntradaVanVolta is not null) { <span>Saiu da escola às @Formatos.Hora(viagem.HorarioEntradaVanVolta)</span> }
+                            @if (viagem.HorarioChegadaEmCasa is not null) { <span>Chegou em casa às @Formatos.Hora(viagem.HorarioChegadaEmCasa)</span> }
+                        </p>
+                    }
+
+                    <div class="viagem-acoes">
+                        <button class="botao-texto" @onclick="() => Abrir(aluno, Painel.Presenca)">Avisar ausência</button>
+                        @if (aluno.PodeAlterarEndereco)
+                        {
+                            <button class="botao-texto" @onclick="() => Abrir(aluno, Painel.Endereco)">Alterar endereço</button>
+                        }
+                    </div>
+
+                    @if (_aberto?.AlunoId == aluno.AlunoId && _painel == Painel.Presenca)
+                    {
+                        <div class="painel">
+                            <label class="campo">
+                                <span>Dia</span>
+                                <input type="date" @bind="_dataPainel" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            </label>
+                            <div class="acoes-formulario">
+                                <button class="botao-primario" @onclick="() => AusenciaAsync(aluno)" disabled="@_ocupado">Avisar que não vai</button>
+                                <button class="botao-texto" @onclick="() => PresencaAsync(aluno)" disabled="@_ocupado">Vai sim, desfazer aviso</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_aberto?.AlunoId == aluno.AlunoId && _painel == Painel.Endereco)
+                    {
+                        <div class="painel">
+                            <p class="apoio">Alterações precisam de 24 horas de antecedência.</p>
+                            <div class="linha-campos">
+                                <label class="campo">
+                                    <span>Dia</span>
+                                    <input type="date" @bind="_dataPainel" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                                </label>
+                                <label class="campo">
+                                    <span>Trajeto</span>
+                                    <select @bind="_trajeto">
+                                        <option value="@Trajeto.Ida">Ida (buscar em)</option>
+                                        <option value="@Trajeto.Volta">Volta (entregar em)</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label class="campo">
+                                <span>Endereço</span>
+                                <input @bind="_endereco" />
+                            </label>
+                            <div class="acoes-formulario">
+                                <button class="botao-primario" @onclick="() => EnderecoAsync(aluno)" disabled="@(_ocupado || string.IsNullOrWhiteSpace(_endereco))">Salvar endereço</button>
+                            </div>
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private enum Painel { Nenhum, Presenca, Endereco }
+
+    private List<MeuAlunoResponse>? _alunos;
+    private MeuAlunoResponse? _aberto;
+    private Painel _painel;
+    private DateTime _dataPainel = DateTime.Today;
+    private Trajeto _trajeto = Trajeto.Ida;
+    private string _endereco = string.Empty;
+    private string? _mensagem;
+    private bool _sucesso;
+    private bool _ocupado;
+
+    protected override Task OnInitializedAsync() => CarregarAsync();
+
+    private Task CarregarAsync() => ExecutarAsync(async () => _alunos = await Api.ListarMeusAlunosAsync());
+
+    private void Abrir(MeuAlunoResponse aluno, Painel painel)
+    {
+        var mesmo = _aberto?.AlunoId == aluno.AlunoId && _painel == painel;
+        _aberto = mesmo ? null : aluno;
+        _painel = mesmo ? Painel.Nenhum : painel;
+        _dataPainel = painel == Painel.Endereco ? DateTime.Today.AddDays(2) : DateTime.Today;
+        _endereco = string.Empty;
+    }
+
+    private PresencaRequest Presenca(MeuAlunoResponse aluno) =>
+        new() { AlunoId = aluno.AlunoId, Data = DateOnly.FromDateTime(_dataPainel) };
+
+    private Task AusenciaAsync(MeuAlunoResponse aluno) => Concluir(async () =>
+    {
+        await Api.InformarAusenciaAsync(Presenca(aluno));
+        return $"Ausência de {aluno.Nome} avisada ao motorista.";
+    });
+
+    private Task PresencaAsync(MeuAlunoResponse aluno) => Concluir(async () =>
+    {
+        await Api.ConfirmarPresencaAsync(Presenca(aluno));
+        return $"Presença de {aluno.Nome} confirmada.";
+    });
+
+    private Task EnderecoAsync(MeuAlunoResponse aluno) => Concluir(async () =>
+    {
+        await Api.AlterarEnderecoAsync(new AlterarEnderecoRequest
+        {
+            AlunoId = aluno.AlunoId,
+            Data = DateOnly.FromDateTime(_dataPainel),
+            Trajeto = _trajeto,
+            Endereco = _endereco
+        });
+        return "Endereço alterado. O motorista foi avisado.";
+    });
+
+    private Task Concluir(Func<Task<string>> acao) => ExecutarAsync(async () =>
+    {
+        var mensagem = await acao();
+        _aberto = null;
+        _painel = Painel.Nenhum;
+        _alunos = await Api.ListarMeusAlunosAsync();
+        _mensagem = mensagem;
+        _sucesso = true;
+    });
+
+    private async Task ExecutarAsync(Func<Task> acao)
+    {
+        _mensagem = null;
+        _ocupado = true;
+
+        try
+        {
+            await acao();
+        }
+        catch (ApiException ex)
+        {
+            _mensagem = ex.Message;
+            _sucesso = false;
+        }
+        finally
+        {
+            _ocupado = false;
+        }
+    }
+}

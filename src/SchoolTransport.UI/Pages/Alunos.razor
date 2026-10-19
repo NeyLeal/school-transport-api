@@ -1,0 +1,69 @@
+@page "/alunos"
+@inject ApiClient Api
+
+<section class="pagina">
+    <header class="cabecalho-pagina">
+        <h1>Alunos</h1>
+        <div class="acoes-cabecalho">
+            <label class="alternador">
+                <input type="checkbox" checked="@_incluirInativos" @onchange="AlternarInativosAsync" />
+                Mostrar inativos
+            </label>
+            <a class="botao-primario" href="alunos/novo">Novo aluno</a>
+        </div>
+    </header>
+
+    <Aviso Mensagem="@_erro" />
+
+    @if (_alunos is { Count: 0 })
+    {
+        <div class="vazio">
+            <p>Nenhum aluno cadastrado.</p>
+            <p class="apoio">Cadastre a escola primeiro e depois os alunos que você transporta.</p>
+        </div>
+    }
+    else if (_alunos is not null)
+    {
+        <ul class="lista-simples">
+            @foreach (var aluno in _alunos)
+            {
+                <li class="@(aluno.Ativo ? null : "inativo")">
+                    <a class="item-link" href="alunos/@aluno.Id">
+                        <strong>@aluno.Nome</strong>
+                        <span class="apoio">@aluno.EscolaNome, @Formatos.Moeda(aluno.ValorMensalidade) por mês</span>
+                    </a>
+                    @if (!aluno.Ativo)
+                    {
+                        <span class="selo">Inativo</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private List<AlunoResponse>? _alunos;
+    private bool _incluirInativos;
+    private string? _erro;
+
+    protected override Task OnInitializedAsync() => CarregarAsync();
+
+    private async Task AlternarInativosAsync(ChangeEventArgs e)
+    {
+        _incluirInativos = e.Value is true;
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        try
+        {
+            _alunos = await Api.ListarAlunosAsync(_incluirInativos);
+        }
+        catch (ApiException ex)
+        {
+            _erro = ex.Message;
+        }
+    }
+}
