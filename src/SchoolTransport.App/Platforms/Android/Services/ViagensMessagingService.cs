@@ -22,17 +22,17 @@ public class ViagensMessagingService : FirebaseMessagingService
             ? null
             : PendingIntent.GetActivity(this, 0, intent, PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
 
-        var builder = new NotificationCompat.Builder(this, CanaisNotificacao.Viagens)
-            .SetSmallIcon(Resource.Mipmap.appicon)
-            .SetContentTitle(notificacao.Title)
-            .SetContentText(notificacao.Body)
-            .SetStyle(new NotificationCompat.BigTextStyle().BigText(notificacao.Body))
-            .SetPriority(NotificationCompat.PriorityHigh)
-            .SetAutoCancel(true);
+        var builder = new NotificationCompat.Builder(this, CanaisNotificacao.Viagens);
+        builder.SetSmallIcon(Resource.Mipmap.appicon);
+        builder.SetContentTitle(notificacao.Title);
+        builder.SetContentText(notificacao.Body);
+        builder.SetStyle(new NotificationCompat.BigTextStyle().BigText(notificacao.Body));
+        builder.SetPriority(NotificationCompat.PriorityHigh);
+        builder.SetAutoCancel(true);
 
         if (abrirApp is not null)
             builder.SetContentIntent(abrirApp);
 
-        NotificationManagerCompat.From(this).Notify(message.MessageId?.GetHashCode() ?? Environment.TickCount, builder.Build());
+        NotificationManagerCompat.From(this)!.Notify(message.MessageId?.GetHashCode() ?? Environment.TickCount, builder.Build()!);
     }
 }
