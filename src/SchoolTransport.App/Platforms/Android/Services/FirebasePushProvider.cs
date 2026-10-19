@@ -16,7 +16,10 @@ public class FirebasePushProvider : IPushProvider
         if (status != PermissionStatus.Granted)
             return null;
 
+        // Obsoleto pela migração do Firebase para IDs de instalação; o servidor ainda envia por token (ver FcmNotificador).
+#pragma warning disable CS0618
         var token = await FirebaseMessaging.Instance.GetToken().AsAsync<Java.Lang.String>();
+#pragma warning restore CS0618
         return token?.ToString();
     }
 }
