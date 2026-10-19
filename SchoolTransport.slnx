@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/SchoolTransport.API/SchoolTransport.API.csproj" />
+    <Project Path="src/SchoolTransport.App/SchoolTransport.App.csproj" />
     <Project Path="src/SchoolTransport.Application/SchoolTransport.Application.csproj" />
     <Project Path="src/SchoolTransport.Contracts/SchoolTransport.Contracts.csproj" />
     <Project Path="src/SchoolTransport.Domain/SchoolTransport.Domain.csproj" />
