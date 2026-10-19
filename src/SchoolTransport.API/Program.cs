@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using SchoolTransport.API.Extensions;
+using SchoolTransport.API.Hubs;
 using SchoolTransport.API.Services;
 using SchoolTransport.Application;
 using SchoolTransport.Application.Common;
+using SchoolTransport.Application.Viagens;
+using SchoolTransport.Contracts.Viagens;
 using SchoolTransport.Infrastructure;
 using SchoolTransport.Infrastructure.Persistence;
 
@@ -17,6 +20,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<TratadorDeExcecoes>();
 builder.Services.AddOpenApiComJwt();
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IPublicadorViagens, SignalRPublicadorViagens>();
 
 var app = builder.Build();
 
@@ -37,5 +42,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ViagensHub>($"/{TempoRealViagens.Rota}");
 
 app.Run();

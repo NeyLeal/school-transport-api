@@ -17,6 +17,7 @@ public class SchoolTransportDbContext(DbContextOptions<SchoolTransportDbContext>
     public DbSet<Aluno> Alunos => Set<Aluno>();
     public DbSet<AlunoResponsavel> AlunoResponsaveis => Set<AlunoResponsavel>();
     public DbSet<ViagemAluno> Viagens => Set<ViagemAluno>();
+    public DbSet<DispositivoPush> DispositivosPush => Set<DispositivoPush>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

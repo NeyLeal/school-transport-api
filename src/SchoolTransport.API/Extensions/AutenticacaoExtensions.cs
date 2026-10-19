@@ -29,6 +29,20 @@ public static class AutenticacaoExtensions
                     ValidAudience = jwt.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key))
                 };
+
+                // WebSockets não enviam o header Authorization; o SignalR manda o token na query string.
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                            context.Token = token;
+
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();

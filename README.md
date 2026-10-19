@@ -35,8 +35,20 @@ Em desenvolvimento a API aplica as migrations ao iniciar. Para criar uma nova: `
 
 O app usa `http://10.0.2.2:5017` no emulador Android e `https://localhost:7260` no Windows (`Configuracao.cs`). Em celular físico, troque pelo IP da máquina na rede.
 
+## Notificações e tempo real
+
+- **Push (Firebase Cloud Messaging):** o Worker lê o outbox e envia o push para os aparelhos registrados do responsável ou motorista. Tokens recusados pelo FCM são removidos.
+- **Tempo real (SignalR):** a API publica cada mudança de viagem no hub `/hubs/viagens`; as telas de viagens e de família se atualizam sozinhas.
+
+Configuração local (arquivos fora do git):
+
+1. `google-services.json` do app Android em `src/SchoolTransport.App/Platforms/Android/`.
+2. Chave da conta de serviço fora do repositório, apontada nos user-secrets do Worker:
+   ```bash
+   dotnet user-secrets set "Firebase:CredenciaisArquivo" "C:\caminho\firebase.json" --project src/SchoolTransport.Worker
+   ```
+   Sem essa configuração o Worker só registra as notificações no log.
+
 ## Próximos passos
 
-- Push e WhatsApp no lugar do `LogNotificador`
-- Atualização em tempo real com SignalR
 - Acesso para ajudantes e mensalidades

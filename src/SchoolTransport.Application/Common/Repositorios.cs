@@ -39,6 +39,14 @@ public interface IAlunoRepository
     Task AdicionarAsync(Aluno aluno, CancellationToken cancellationToken = default);
 }
 
+public interface IDispositivoPushRepository
+{
+    Task<DispositivoPush?> ObterPorTokenAsync(string token, CancellationToken cancellationToken = default);
+    Task<List<DispositivoPush>> ListarPorUsuarioAsync(Guid usuarioId, CancellationToken cancellationToken = default);
+    Task AdicionarAsync(DispositivoPush dispositivo, CancellationToken cancellationToken = default);
+    void Remover(DispositivoPush dispositivo);
+}
+
 public interface IViagemRepository
 {
     Task<List<ViagemAluno>> ListarPorDataAsync(Guid motoristaId, DateOnly data, CancellationToken cancellationToken = default);

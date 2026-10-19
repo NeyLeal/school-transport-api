@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SchoolTransport.Application.Alunos;
 using SchoolTransport.Application.Auth;
+using SchoolTransport.Application.Dispositivos;
 using SchoolTransport.Application.Escolas;
 using SchoolTransport.Application.Motoristas;
 using SchoolTransport.Application.Notificacoes;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<ResponsavelService>();
         services.AddScoped<AjudanteService>();
         services.AddScoped<ViagemService>();
+        services.AddScoped<DispositivoService>();
         services.AddScoped<NotificacaoViagemService>();
 
         return services;
