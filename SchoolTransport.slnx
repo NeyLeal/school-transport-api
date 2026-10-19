@@ -7,4 +7,7 @@
     <Project Path="src/SchoolTransport.Infrastructure/SchoolTransport.Infrastructure.csproj" />
     <Project Path="src/SchoolTransport.Worker/SchoolTransport.Worker.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SchoolTransport.UnitTests/SchoolTransport.UnitTests.csproj" />
+  </Folder>
 </Solution>
