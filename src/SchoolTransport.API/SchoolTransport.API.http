@@ -1,6 +1,49 @@
-@SchoolTransport.API_HostAddress = http://localhost:5017
+@api = https://localhost:7260
+@token = cole-o-token-aqui
 
-GET {{SchoolTransport.API_HostAddress}}/weatherforecast/
-Accept: application/json
+POST {{api}}/api/auth/registrar-motorista
+Content-Type: application/json
+
+{
+  "nome": "Carlos Motorista",
+  "email": "carlos@email.com",
+  "senha": "123456",
+  "cnh": "12345678900",
+  "telefone": "11999999999"
+}
 
 ###
+
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "carlos@email.com",
+  "senha": "123456"
+}
+
+###
+
+POST {{api}}/api/escolas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Escola Municipal Centro",
+  "endereco": "Av. Central, 100"
+}
+
+###
+
+POST {{api}}/api/viagens/gerar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "data": "2026-10-20"
+}
+
+###
+
+GET {{api}}/api/viagens?data=2026-10-20
+Authorization: Bearer {{token}}
