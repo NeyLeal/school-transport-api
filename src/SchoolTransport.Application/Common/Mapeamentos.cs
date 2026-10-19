@@ -21,7 +21,7 @@ internal static class Mapeamentos
         new(responsavel.Id, responsavel.Nome, responsavel.Telefone, responsavel.Email, responsavel.PossuiAcesso);
 
     public static AjudanteResponse ParaResposta(this Ajudante ajudante) =>
-        new(ajudante.Id, ajudante.Nome, ajudante.Telefone);
+        new(ajudante.Id, ajudante.Nome, ajudante.Telefone, ajudante.PossuiAcesso);
 
     public static AlunoResponse ParaResposta(this Aluno aluno) =>
         new(

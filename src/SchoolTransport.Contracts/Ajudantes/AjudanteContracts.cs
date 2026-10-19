@@ -6,4 +6,10 @@ public class AjudanteRequest
     public string Telefone { get; set; } = string.Empty;
 }
 
-public record AjudanteResponse(Guid Id, string Nome, string Telefone);
+public class CriarAcessoAjudanteRequest
+{
+    public string Email { get; set; } = string.Empty;
+    public string Senha { get; set; } = string.Empty;
+}
+
+public record AjudanteResponse(Guid Id, string Nome, string Telefone, bool PossuiAcesso);

@@ -5,14 +5,17 @@ namespace SchoolTransport.Application.Common;
 public interface IUsuarioRepository
 {
     Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> EmailEmUsoAsync(string email, CancellationToken cancellationToken = default);
     Task AdicionarAsync(Usuario usuario, CancellationToken cancellationToken = default);
+    void Remover(Usuario usuario);
 }
 
 public interface IMotoristaRepository
 {
     Task<Motorista?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Motorista?> ObterPorUsuarioAsync(Guid usuarioId, CancellationToken cancellationToken = default);
+    Task<Motorista?> ObterPorUsuarioDoAjudanteAsync(Guid usuarioId, CancellationToken cancellationToken = default);
     Task AdicionarAsync(Motorista motorista, CancellationToken cancellationToken = default);
 }
 

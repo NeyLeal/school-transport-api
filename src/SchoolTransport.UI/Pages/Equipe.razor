@@ -38,8 +38,36 @@
                     <div>
                         <strong>@ajudante.Nome</strong>
                         <span class="apoio">@ajudante.Telefone</span>
+                        @if (ajudante.PossuiAcesso)
+                        {
+                            <span class="selo">Usa o app</span>
+                        }
                     </div>
-                    <button class="botao-texto perigo" @onclick="() => RemoverAsync(ajudante.Id)">Remover</button>
+                    <div class="acoes-item">
+                        @if (!ajudante.PossuiAcesso)
+                        {
+                            <button class="botao-texto" @onclick="() => AbrirAcesso(ajudante)">Liberar acesso</button>
+                        }
+                        <button class="botao-texto perigo" @onclick="() => RemoverAsync(ajudante.Id)">Remover</button>
+                    </div>
+                    @if (_acessoPara?.Id == ajudante.Id)
+                    {
+                        <form class="acesso" @onsubmit="LiberarAcessoAsync" @onsubmit:preventDefault>
+                            <p class="apoio">Com acesso, @ajudante.Nome registra embarque e desembarque das crianças.</p>
+                            <label class="campo">
+                                <span>E-mail de login</span>
+                                <input type="email" @bind="_acesso.Email" required autocomplete="off" />
+                            </label>
+                            <label class="campo">
+                                <span>Senha inicial</span>
+                                <input type="password" @bind="_acesso.Senha" minlength="6" required autocomplete="new-password" />
+                            </label>
+                            <div class="acoes-formulario">
+                                <button class="botao-primario" type="submit" disabled="@_ocupado">Liberar acesso</button>
+                                <button class="botao-texto" type="button" @onclick="() => _acessoPara = null">Cancelar</button>
+                            </div>
+                        </form>
+                    }
                 </li>
             }
         </ul>
@@ -49,8 +77,24 @@
 @code {
     private AjudanteRequest _modelo = new();
     private List<AjudanteResponse>? _ajudantes;
+    private AjudanteResponse? _acessoPara;
+    private CriarAcessoAjudanteRequest _acesso = new();
     private string? _erro;
     private bool _ocupado;
+
+    private void AbrirAcesso(AjudanteResponse ajudante)
+    {
+        _acessoPara = ajudante;
+        _acesso = new CriarAcessoAjudanteRequest();
+    }
+
+    private Task LiberarAcessoAsync() => ExecutarAsync(async () =>
+    {
+        await Api.CriarAcessoAjudanteAsync(_acessoPara!.Id, _acesso);
+        _acessoPara = null;
+        _acesso = new CriarAcessoAjudanteRequest();
+        _ajudantes = await Api.ListarAjudantesAsync();
+    });
 
     protected override Task OnInitializedAsync() => ExecutarAsync(async () => _ajudantes = await Api.ListarAjudantesAsync());
 
