@@ -9,6 +9,12 @@ public class UsuarioRepository(SchoolTransportDbContext context) : IUsuarioRepos
     public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken cancellationToken = default) =>
         context.Usuarios.FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
 
+    public Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        context.Usuarios.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public void Remover(Usuario usuario) =>
+        context.Usuarios.Remove(usuario);
+
     public Task<bool> EmailEmUsoAsync(string email, CancellationToken cancellationToken = default) =>
         context.Usuarios.AnyAsync(x => x.Email == email, cancellationToken);
 

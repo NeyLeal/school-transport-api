@@ -14,6 +14,9 @@ public class MotoristaRepository(SchoolTransportDbContext context) : IMotoristaR
     public Task<Motorista?> ObterPorUsuarioAsync(Guid usuarioId, CancellationToken cancellationToken = default) =>
         context.Motoristas.FirstOrDefaultAsync(x => x.UsuarioId == usuarioId, cancellationToken);
 
+    public Task<Motorista?> ObterPorUsuarioDoAjudanteAsync(Guid usuarioId, CancellationToken cancellationToken = default) =>
+        context.Motoristas.FirstOrDefaultAsync(x => x.Ajudantes.Any(a => a.UsuarioId == usuarioId), cancellationToken);
+
     public async Task AdicionarAsync(Motorista motorista, CancellationToken cancellationToken = default) =>
         await context.Motoristas.AddAsync(motorista, cancellationToken);
 }

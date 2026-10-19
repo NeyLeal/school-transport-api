@@ -37,5 +37,12 @@ public class AjudanteConfiguration : IEntityTypeConfiguration<Ajudante>
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Nome).HasMaxLength(150).IsRequired();
         builder.Property(x => x.Telefone).HasMaxLength(30).IsRequired();
+        builder.Ignore(x => x.PossuiAcesso);
+        builder.HasIndex(x => x.UsuarioId).IsUnique().HasFilter("[UsuarioId] IS NOT NULL");
+
+        builder.HasOne<Usuario>()
+            .WithMany()
+            .HasForeignKey(x => x.UsuarioId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

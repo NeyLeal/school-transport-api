@@ -11,6 +11,7 @@ namespace SchoolTransport.Application.Viagens;
 public class ViagemService(
     IViagemRepository viagens,
     IAlunoRepository alunos,
+    IMotoristaRepository motoristas,
     IUsuarioAtual usuarioAtual,
     IRelogio relogio,
     IUnitOfWork unitOfWork,
@@ -18,6 +19,7 @@ public class ViagemService(
 {
     public async Task<IReadOnlyList<ViagemResponse>> ListarAsync(DateOnly? data, CancellationToken cancellationToken = default)
     {
+        await GarantirAjudanteAtivoAsync(cancellationToken);
         var lista = await viagens.ListarPorDataAsync(usuarioAtual.MotoristaId, data ?? relogio.Hoje, cancellationToken);
         return lista.Select(v => v.ParaResposta()).ToList();
     }
@@ -45,6 +47,7 @@ public class ViagemService(
 
     public async Task<ViagemResponse> RegistrarAsync(Guid id, AcaoViagem acao, CancellationToken cancellationToken = default)
     {
+        await GarantirAjudanteAtivoAsync(cancellationToken);
         var viagem = await viagens.ObterAsync(id, cancellationToken);
 
         if (viagem is null || viagem.MotoristaId != usuarioAtual.MotoristaId)
@@ -108,6 +111,18 @@ public class ViagemService(
                 a.Responsaveis.Any(r => r.ResponsavelId == responsavelId && r.PodeAlterarEndereco),
                 viagensDeHoje.FirstOrDefault(v => v.AlunoId == a.Id)?.ParaResposta()))
             .ToList();
+    }
+
+    // O token do ajudante continua válido após ele ser removido da equipe; confere o vínculo a cada uso.
+    private async Task GarantirAjudanteAtivoAsync(CancellationToken cancellationToken)
+    {
+        if (usuarioAtual.Perfil != PerfilUsuario.Ajudante)
+            return;
+
+        var motorista = await motoristas.ObterPorUsuarioDoAjudanteAsync(usuarioAtual.UsuarioId, cancellationToken);
+
+        if (motorista?.Id != usuarioAtual.MotoristaId)
+            throw new AcessoNegadoException("Você não faz mais parte desta equipe.");
     }
 
     private async Task<ViagemResponse> SalvarEPublicarAsync(ViagemAluno viagem, CancellationToken cancellationToken)

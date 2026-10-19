@@ -25,6 +25,19 @@ public class MotoristaTests
     }
 
     [Fact]
+    public void Deve_liberar_acesso_do_ajudante_uma_unica_vez()
+    {
+        var motorista = new Motorista(Guid.NewGuid(), "Carlos", "12345678900", "11999999999");
+        var ajudante = motorista.AdicionarAjudante("Bia", "11988887777");
+        var usuarioId = Guid.NewGuid();
+
+        motorista.LiberarAcessoAjudante(ajudante.Id, usuarioId);
+
+        Assert.Equal(usuarioId, ajudante.UsuarioId);
+        Assert.Throws<DomainException>(() => motorista.LiberarAcessoAjudante(ajudante.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
     public void Responsavel_com_acesso_nao_troca_email()
     {
         var responsavel = new Responsavel(Guid.NewGuid(), "Marta", "11977776666", "marta@email.com");

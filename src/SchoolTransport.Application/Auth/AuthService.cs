@@ -50,6 +50,11 @@ public class AuthService(
                     ?? throw new CredenciaisInvalidasException();
                 return GerarResposta(usuario, responsavel.MotoristaId, responsavel.Id);
 
+            case PerfilUsuario.Ajudante:
+                var motoristaDoAjudante = await motoristas.ObterPorUsuarioDoAjudanteAsync(usuario.Id, cancellationToken)
+                    ?? throw new CredenciaisInvalidasException();
+                return GerarResposta(usuario, motoristaDoAjudante.Id, null);
+
             default:
                 return GerarResposta(usuario, null, null);
         }

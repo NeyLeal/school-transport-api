@@ -38,12 +38,23 @@ public class Motorista : AggregateRoot
         return ajudante;
     }
 
-    public void RemoverAjudante(Guid ajudanteId)
+    public Ajudante LiberarAcessoAjudante(Guid ajudanteId, Guid usuarioId)
     {
-        var ajudante = _ajudantes.FirstOrDefault(a => a.Id == ajudanteId)
-            ?? throw new DomainException("Ajudante não encontrado para este motorista.");
+        var ajudante = ObterAjudante(ajudanteId);
+        ajudante.VincularUsuario(usuarioId);
+        MarcarComoAtualizado();
+        return ajudante;
+    }
 
+    public Ajudante RemoverAjudante(Guid ajudanteId)
+    {
+        var ajudante = ObterAjudante(ajudanteId);
         _ajudantes.Remove(ajudante);
         MarcarComoAtualizado();
+        return ajudante;
     }
+
+    private Ajudante ObterAjudante(Guid ajudanteId) =>
+        _ajudantes.FirstOrDefault(a => a.Id == ajudanteId)
+            ?? throw new DomainException("Ajudante não encontrado para este motorista.");
 }

@@ -68,5 +68,12 @@ public class NotificacaoViagemService(
         await notificador.EnviarAsync(
             new Notificacao(motorista.UsuarioId, motorista.Nome, motorista.Telefone, string.Empty, titulo, mensagem),
             cancellationToken);
+
+        foreach (var ajudante in motorista.Ajudantes.Where(a => a.PossuiAcesso))
+        {
+            await notificador.EnviarAsync(
+                new Notificacao(ajudante.UsuarioId, ajudante.Nome, ajudante.Telefone, string.Empty, titulo, mensagem),
+                cancellationToken);
+        }
     }
 }

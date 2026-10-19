@@ -69,6 +69,9 @@ public class ApiClient(HttpClient http, SessaoService sessao)
     public Task<AjudanteResponse> AdicionarAjudanteAsync(AjudanteRequest request) =>
         EnviarAsync<AjudanteResponse>(HttpMethod.Post, "api/ajudantes", request);
 
+    public Task<AjudanteResponse> CriarAcessoAjudanteAsync(Guid id, CriarAcessoAjudanteRequest request) =>
+        EnviarAsync<AjudanteResponse>(HttpMethod.Post, $"api/ajudantes/{id}/acesso", request);
+
     public Task RemoverAjudanteAsync(Guid id) =>
         EnviarAsync(HttpMethod.Delete, $"api/ajudantes/{id}");
 

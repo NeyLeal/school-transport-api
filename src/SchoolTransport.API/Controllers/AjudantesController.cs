@@ -19,6 +19,10 @@ public class AjudantesController(AjudanteService ajudanteService) : ControllerBa
     public async Task<ActionResult<AjudanteResponse>> Adicionar(AjudanteRequest request, CancellationToken cancellationToken) =>
         Ok(await ajudanteService.AdicionarAsync(request, cancellationToken));
 
+    [HttpPost("{id:guid}/acesso")]
+    public async Task<ActionResult<AjudanteResponse>> CriarAcesso(Guid id, CriarAcessoAjudanteRequest request, CancellationToken cancellationToken) =>
+        Ok(await ajudanteService.CriarAcessoAsync(id, request, cancellationToken));
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Remover(Guid id, CancellationToken cancellationToken)
     {
