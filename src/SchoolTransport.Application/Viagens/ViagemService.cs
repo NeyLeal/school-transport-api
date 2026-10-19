@@ -1,0 +1,159 @@
+using SchoolTransport.Application.Common;
+using SchoolTransport.Contracts.Comum;
+using SchoolTransport.Contracts.Viagens;
+using SchoolTransport.Domain.Entities;
+using SchoolTransport.Domain.Enums;
+using SchoolTransport.Domain.Exceptions;
+using TrajetoDominio = SchoolTransport.Domain.Enums.Trajeto;
+
+namespace SchoolTransport.Application.Viagens;
+
+public class ViagemService(
+    IViagemRepository viagens,
+    IAlunoRepository alunos,
+    IUsuarioAtual usuarioAtual,
+    IRelogio relogio,
+    IUnitOfWork unitOfWork)
+{
+    public async Task<IReadOnlyList<ViagemResponse>> ListarAsync(DateOnly? data, CancellationToken cancellationToken = default)
+    {
+        var lista = await viagens.ListarPorDataAsync(usuarioAtual.MotoristaId, data ?? relogio.Hoje, cancellationToken);
+        return lista.Select(v => v.ParaResposta()).ToList();
+    }
+
+    public async Task<GerarViagensResponse> GerarAsync(GerarViagensRequest request, CancellationToken cancellationToken = default)
+    {
+        GarantirDataNaoPassada(request.Data);
+
+        var ativos = await alunos.ListarAsync(usuarioAtual.MotoristaId, incluirInativos: false, cancellationToken);
+        var comViagem = await viagens.AlunosComViagemAsync(usuarioAtual.MotoristaId, request.Data, cancellationToken);
+
+        var novas = ativos
+            .Where(a => !comViagem.Contains(a.Id))
+            .Select(a => new ViagemAluno(a.Id, a.MotoristaId, request.Data))
+            .ToList();
+
+        if (novas.Count > 0)
+        {
+            await viagens.AdicionarVariasAsync(novas, cancellationToken);
+            await unitOfWork.SalvarAsync(cancellationToken);
+        }
+
+        return new GerarViagensResponse(novas.Count);
+    }
+
+    public async Task<ViagemResponse> RegistrarAsync(Guid id, AcaoViagem acao, CancellationToken cancellationToken = default)
+    {
+        var viagem = await viagens.ObterAsync(id, cancellationToken);
+
+        if (viagem is null || viagem.MotoristaId != usuarioAtual.MotoristaId)
+            throw new NaoEncontradoException("Viagem não encontrada.");
+
+        switch (acao)
+        {
+            case AcaoViagem.Embarque:
+                viagem.RegistrarEmbarque();
+                break;
+            case AcaoViagem.ChegadaEscola:
+                viagem.RegistrarChegadaNaEscola();
+                break;
+            case AcaoViagem.SaidaEscola:
+                viagem.RegistrarSaidaDaEscola();
+                break;
+            case AcaoViagem.ChegadaCasa:
+                viagem.RegistrarChegadaEmCasa();
+                break;
+            default:
+                throw new DomainException("Ação de viagem inválida.");
+        }
+
+        await unitOfWork.SalvarAsync(cancellationToken);
+        return viagem.ParaResposta();
+    }
+
+    public async Task<ViagemResponse> InformarAusenciaAsync(PresencaRequest request, CancellationToken cancellationToken = default)
+    {
+        var viagem = await ObterOuCriarViagemAsync(request.AlunoId, request.Data, exigirPermissaoEndereco: false, cancellationToken);
+        viagem.InformarAusencia();
+        await unitOfWork.SalvarAsync(cancellationToken);
+        return viagem.ParaResposta();
+    }
+
+    public async Task<ViagemResponse> ConfirmarPresencaAsync(PresencaRequest request, CancellationToken cancellationToken = default)
+    {
+        var viagem = await ObterOuCriarViagemAsync(request.AlunoId, request.Data, exigirPermissaoEndereco: false, cancellationToken);
+        viagem.ConfirmarPresenca();
+        await unitOfWork.SalvarAsync(cancellationToken);
+        return viagem.ParaResposta();
+    }
+
+    public async Task<ViagemResponse> AlterarEnderecoAsync(AlterarEnderecoRequest request, CancellationToken cancellationToken = default)
+    {
+        var viagem = await ObterOuCriarViagemAsync(request.AlunoId, request.Data, exigirPermissaoEndereco: true, cancellationToken);
+        viagem.AlterarEndereco((TrajetoDominio)request.Trajeto, request.Endereco, relogio.Agora);
+        await unitOfWork.SalvarAsync(cancellationToken);
+        return viagem.ParaResposta();
+    }
+
+    public async Task<IReadOnlyList<MeuAlunoResponse>> ListarMeusAlunosAsync(CancellationToken cancellationToken = default)
+    {
+        var responsavelId = usuarioAtual.ResponsavelId
+            ?? throw new AcessoNegadoException("Disponível apenas para responsáveis.");
+
+        var lista = await alunos.ListarPorResponsavelAsync(responsavelId, cancellationToken);
+        var viagensDeHoje = await viagens.ListarPorAlunosAsync(lista.Select(a => a.Id), relogio.Hoje, cancellationToken);
+
+        return lista
+            .Select(a => new MeuAlunoResponse(
+                a.Id,
+                a.Nome,
+                a.Escola?.Nome ?? string.Empty,
+                a.Responsaveis.Any(r => r.ResponsavelId == responsavelId && r.PodeAlterarEndereco),
+                viagensDeHoje.FirstOrDefault(v => v.AlunoId == a.Id)?.ParaResposta()))
+            .ToList();
+    }
+
+    private async Task<ViagemAluno> ObterOuCriarViagemAsync(Guid alunoId, DateOnly data, bool exigirPermissaoEndereco, CancellationToken cancellationToken)
+    {
+        GarantirDataNaoPassada(data);
+
+        var aluno = await alunos.ObterAsync(alunoId, cancellationToken)
+            ?? throw new NaoEncontradoException("Aluno não encontrado.");
+
+        GarantirAcesso(aluno, exigirPermissaoEndereco);
+
+        var viagem = await viagens.ObterPorAlunoEDataAsync(alunoId, data, cancellationToken);
+
+        if (viagem is not null)
+            return viagem;
+
+        viagem = new ViagemAluno(aluno.Id, aluno.MotoristaId, data);
+        await viagens.AdicionarAsync(viagem, cancellationToken);
+        return viagem;
+    }
+
+    private void GarantirAcesso(Aluno aluno, bool exigirPermissaoEndereco)
+    {
+        if (usuarioAtual.Perfil == PerfilUsuario.Responsavel)
+        {
+            var responsavelId = usuarioAtual.ResponsavelId
+                ?? throw new AcessoNegadoException("Responsável não identificado.");
+
+            if (exigirPermissaoEndereco)
+                aluno.GarantirPermissaoAlteracaoEndereco(responsavelId);
+            else
+                aluno.GarantirResponsavelVinculado(responsavelId);
+
+            return;
+        }
+
+        if (aluno.MotoristaId != usuarioAtual.MotoristaId)
+            throw new NaoEncontradoException("Aluno não encontrado.");
+    }
+
+    private void GarantirDataNaoPassada(DateOnly data)
+    {
+        if (data < relogio.Hoje)
+            throw new DomainException("Não é possível alterar viagens de datas passadas.");
+    }
+}
