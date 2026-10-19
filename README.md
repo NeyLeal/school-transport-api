@@ -25,14 +25,13 @@ Gestão de transporte escolar: o motorista registra cada etapa da viagem (embarq
 ## Como rodar
 
 ```bash
-dotnet tool install --global dotnet-ef
-dotnet ef migrations add Inicial -p src/SchoolTransport.Infrastructure -s src/SchoolTransport.API -o Persistence/Migrations
+dotnet tool restore
 dotnet run --project src/SchoolTransport.API --launch-profile https
 dotnet run --project src/SchoolTransport.Worker
 dotnet run --project src/SchoolTransport.Web --launch-profile https
 ```
 
-Em desenvolvimento a API aplica as migrations ao iniciar. A documentação fica em `https://localhost:7260/swagger`.
+Em desenvolvimento a API aplica as migrations ao iniciar. Para criar uma nova: `dotnet ef migrations add <Nome> -p src/SchoolTransport.Infrastructure -s src/SchoolTransport.API -o Persistence/Migrations`. A documentação fica em `https://localhost:7260/swagger`.
 
 O app usa `http://10.0.2.2:5017` no emulador Android e `https://localhost:7260` no Windows (`Configuracao.cs`). Em celular físico, troque pelo IP da máquina na rede.
 
