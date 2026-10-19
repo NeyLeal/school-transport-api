@@ -40,7 +40,8 @@ public class FcmNotificador(
             Android = new AndroidConfig
             {
                 Priority = Priority.High,
-                Notification = new AndroidNotification { ChannelId = CanaisNotificacao.Viagens }
+                // Sem EventTimestamp o SDK envia DateTime.MinValue e o Android mostra "há 2032 anos".
+                Notification = new AndroidNotification { ChannelId = CanaisNotificacao.Viagens, EventTimestamp = DateTime.UtcNow }
             }
         };
 

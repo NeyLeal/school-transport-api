@@ -23,7 +23,8 @@ public class ViagensMessagingService : FirebaseMessagingService
             : PendingIntent.GetActivity(this, 0, intent, PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
 
         var builder = new NotificationCompat.Builder(this, CanaisNotificacao.Viagens);
-        builder.SetSmallIcon(Resource.Mipmap.appicon);
+        builder.SetSmallIcon(Resource.Drawable.ic_notificacao);
+        builder.SetColor(GetColor(Resource.Color.cor_notificacao));
         builder.SetContentTitle(notificacao.Title);
         builder.SetContentText(notificacao.Body);
         builder.SetStyle(new NotificationCompat.BigTextStyle().BigText(notificacao.Body));
