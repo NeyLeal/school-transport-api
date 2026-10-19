@@ -11,3 +11,6 @@ obj/
 docker-data/
 .DS_Store
 Thumbs.db
+
+# Configuração do Firebase (baixe no console: Configurações do projeto > Seus apps)
+src/SchoolTransport.App/Platforms/Android/google-services.json

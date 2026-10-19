@@ -140,6 +140,40 @@ namespace SchoolTransport.Infrastructure.Persistence.Migrations
                     b.ToTable("AlunoResponsaveis", (string)null);
                 });
 
+            modelBuilder.Entity("SchoolTransport.Domain.Entities.DispositivoPush", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Plataforma")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("DispositivosPush", (string)null);
+                });
+
             modelBuilder.Entity("SchoolTransport.Domain.Entities.Escola", b =>
                 {
                     b.Property<Guid>("Id")
@@ -422,6 +456,15 @@ namespace SchoolTransport.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Responsavel");
+                });
+
+            modelBuilder.Entity("SchoolTransport.Domain.Entities.DispositivoPush", b =>
+                {
+                    b.HasOne("SchoolTransport.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SchoolTransport.Domain.Entities.Escola", b =>

@@ -1,3 +1,6 @@
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,9 +36,32 @@ public static class DependencyInjection
         services.AddSingleton<ISenhaHasher, BCryptSenhaHasher>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IRelogio, RelogioBrasil>();
-        services.AddSingleton<INotificador, LogNotificador>();
+        services.AddScoped<IDispositivoPushRepository, DispositivoPushRepository>();
+        services.AddNotificador(configuration);
         services.AddScoped<OutboxProcessor>();
 
         return services;
+    }
+
+    private static void AddNotificador(this IServiceCollection services, IConfiguration configuration)
+    {
+        var firebase = configuration.GetSection(FirebaseSettings.Secao).Get<FirebaseSettings>() ?? new FirebaseSettings();
+
+        if (string.IsNullOrWhiteSpace(firebase.CredenciaisArquivo))
+        {
+            services.AddSingleton<INotificador, LogNotificador>();
+            return;
+        }
+
+        if (!File.Exists(firebase.CredenciaisArquivo))
+            throw new InvalidOperationException($"Arquivo de credenciais do Firebase não encontrado: {firebase.CredenciaisArquivo}");
+
+        services.AddSingleton(_ =>
+        {
+            var credencial = CredentialFactory.FromFile<ServiceAccountCredential>(firebase.CredenciaisArquivo).ToGoogleCredential();
+            var app = FirebaseApp.Create(new AppOptions { Credential = credencial }, nameof(SchoolTransport));
+            return FirebaseMessaging.GetMessaging(app);
+        });
+        services.AddScoped<INotificador, FcmNotificador>();
     }
 }

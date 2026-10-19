@@ -1,5 +1,7 @@
 @page "/familia"
 @inject ApiClient Api
+@inject TempoRealService TempoReal
+@implements IDisposable
 
 <section class="pagina">
     <header class="cabecalho-pagina">
@@ -109,7 +111,24 @@
     private bool _sucesso;
     private bool _ocupado;
 
-    protected override Task OnInitializedAsync() => CarregarAsync();
+    protected override Task OnInitializedAsync()
+    {
+        TempoReal.ViagemAtualizada += AoAtualizarViagem;
+        return CarregarAsync();
+    }
+
+    private void AoAtualizarViagem(ViagemResponse viagem) => _ = InvokeAsync(() =>
+    {
+        var indice = _alunos?.FindIndex(a => a.AlunoId == viagem.AlunoId) ?? -1;
+
+        if (indice < 0 || viagem.Data != DateOnly.FromDateTime(DateTime.Now))
+            return;
+
+        _alunos![indice] = _alunos[indice] with { ViagemDeHoje = viagem };
+        StateHasChanged();
+    });
+
+    public void Dispose() => TempoReal.ViagemAtualizada -= AoAtualizarViagem;
 
     private Task CarregarAsync() => ExecutarAsync(async () => _alunos = await Api.ListarMeusAlunosAsync());
 

@@ -53,7 +53,7 @@ public class NotificacaoViagemService(
         {
             var responsavel = vinculo.Responsavel;
             await notificador.EnviarAsync(
-                new Notificacao(responsavel.Nome, responsavel.Telefone, responsavel.Email, "SchoolTransport", mensagem),
+                new Notificacao(responsavel.UsuarioId, responsavel.Nome, responsavel.Telefone, responsavel.Email, "SchoolTransport", mensagem),
                 cancellationToken);
         }
     }
@@ -66,7 +66,7 @@ public class NotificacaoViagemService(
             return;
 
         await notificador.EnviarAsync(
-            new Notificacao(motorista.Nome, motorista.Telefone, string.Empty, titulo, mensagem),
+            new Notificacao(motorista.UsuarioId, motorista.Nome, motorista.Telefone, string.Empty, titulo, mensagem),
             cancellationToken);
     }
 }

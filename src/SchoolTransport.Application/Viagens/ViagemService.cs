@@ -13,7 +13,8 @@ public class ViagemService(
     IAlunoRepository alunos,
     IUsuarioAtual usuarioAtual,
     IRelogio relogio,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IPublicadorViagens publicador)
 {
     public async Task<IReadOnlyList<ViagemResponse>> ListarAsync(DateOnly? data, CancellationToken cancellationToken = default)
     {
@@ -67,32 +68,28 @@ public class ViagemService(
                 throw new DomainException("Ação de viagem inválida.");
         }
 
-        await unitOfWork.SalvarAsync(cancellationToken);
-        return viagem.ParaResposta();
+        return await SalvarEPublicarAsync(viagem, cancellationToken);
     }
 
     public async Task<ViagemResponse> InformarAusenciaAsync(PresencaRequest request, CancellationToken cancellationToken = default)
     {
         var viagem = await ObterOuCriarViagemAsync(request.AlunoId, request.Data, exigirPermissaoEndereco: false, cancellationToken);
         viagem.InformarAusencia();
-        await unitOfWork.SalvarAsync(cancellationToken);
-        return viagem.ParaResposta();
+        return await SalvarEPublicarAsync(viagem, cancellationToken);
     }
 
     public async Task<ViagemResponse> ConfirmarPresencaAsync(PresencaRequest request, CancellationToken cancellationToken = default)
     {
         var viagem = await ObterOuCriarViagemAsync(request.AlunoId, request.Data, exigirPermissaoEndereco: false, cancellationToken);
         viagem.ConfirmarPresenca();
-        await unitOfWork.SalvarAsync(cancellationToken);
-        return viagem.ParaResposta();
+        return await SalvarEPublicarAsync(viagem, cancellationToken);
     }
 
     public async Task<ViagemResponse> AlterarEnderecoAsync(AlterarEnderecoRequest request, CancellationToken cancellationToken = default)
     {
         var viagem = await ObterOuCriarViagemAsync(request.AlunoId, request.Data, exigirPermissaoEndereco: true, cancellationToken);
         viagem.AlterarEndereco((TrajetoDominio)request.Trajeto, request.Endereco, relogio.Agora);
-        await unitOfWork.SalvarAsync(cancellationToken);
-        return viagem.ParaResposta();
+        return await SalvarEPublicarAsync(viagem, cancellationToken);
     }
 
     public async Task<IReadOnlyList<MeuAlunoResponse>> ListarMeusAlunosAsync(CancellationToken cancellationToken = default)
@@ -111,6 +108,15 @@ public class ViagemService(
                 a.Responsaveis.Any(r => r.ResponsavelId == responsavelId && r.PodeAlterarEndereco),
                 viagensDeHoje.FirstOrDefault(v => v.AlunoId == a.Id)?.ParaResposta()))
             .ToList();
+    }
+
+    private async Task<ViagemResponse> SalvarEPublicarAsync(ViagemAluno viagem, CancellationToken cancellationToken)
+    {
+        await unitOfWork.SalvarAsync(cancellationToken);
+
+        var resposta = viagem.ParaResposta();
+        await publicador.ViagemAtualizadaAsync(viagem.MotoristaId, resposta, cancellationToken);
+        return resposta;
     }
 
     private async Task<ViagemAluno> ObterOuCriarViagemAsync(Guid alunoId, DateOnly data, bool exigirPermissaoEndereco, CancellationToken cancellationToken)

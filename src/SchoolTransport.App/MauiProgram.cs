@@ -13,6 +13,9 @@ public static class MauiProgram
 
         builder.Services.AddMauiBlazorWebView();
         builder.Services.AddSingleton<ISessaoStorage, SecureStorageSessao>();
+#if ANDROID
+        builder.Services.AddSingleton<IPushProvider, FirebasePushProvider>();
+#endif
         builder.Services.AddSchoolTransportUi(Configuracao.ApiBaseUrl);
 
 #if DEBUG

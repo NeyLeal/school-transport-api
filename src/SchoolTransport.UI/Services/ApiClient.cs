@@ -6,6 +6,7 @@ using SchoolTransport.Contracts.Ajudantes;
 using SchoolTransport.Contracts.Alunos;
 using SchoolTransport.Contracts.Auth;
 using SchoolTransport.Contracts.Comum;
+using SchoolTransport.Contracts.Dispositivos;
 using SchoolTransport.Contracts.Escolas;
 using SchoolTransport.Contracts.Responsaveis;
 using SchoolTransport.Contracts.Viagens;
@@ -91,6 +92,12 @@ public class ApiClient(HttpClient http, SessaoService sessao)
 
     public Task<List<MeuAlunoResponse>> ListarMeusAlunosAsync() =>
         EnviarAsync<List<MeuAlunoResponse>>(HttpMethod.Get, "api/viagens/meus-alunos");
+
+    public Task RegistrarDispositivoAsync(RegistrarDispositivoRequest request) =>
+        EnviarAsync(HttpMethod.Post, "api/dispositivos", request);
+
+    public Task RemoverDispositivoAsync(RemoverDispositivoRequest request) =>
+        EnviarAsync(HttpMethod.Post, "api/dispositivos/remover", request);
 
     private async Task<T> EnviarAsync<T>(HttpMethod metodo, string url, object? corpo = null)
     {

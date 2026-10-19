@@ -1,6 +1,8 @@
 @page "/viagens"
 @inject ApiClient Api
 @inject SessaoService Sessao
+@inject TempoRealService TempoReal
+@implements IDisposable
 
 <section class="pagina">
     <header class="cabecalho-pagina">
@@ -81,7 +83,21 @@
     private bool _sucesso;
     private bool _ocupado;
 
-    protected override Task OnInitializedAsync() => CarregarAsync();
+    protected override Task OnInitializedAsync()
+    {
+        TempoReal.ViagemAtualizada += AoAtualizarViagem;
+        return CarregarAsync();
+    }
+
+    // Atualizações feitas por outro aparelho (ajudante, responsável) chegam pelo SignalR.
+    private void AoAtualizarViagem(ViagemResponse viagem) => _ = InvokeAsync(() =>
+    {
+        if (_viagens is null || viagem.Data != _data)
+            return;
+
+        Substituir(viagem);
+        StateHasChanged();
+    });
 
     private async Task AlterarDataAsync(ChangeEventArgs e)
     {
@@ -118,6 +134,8 @@
         if (indice >= 0)
             _viagens[indice] = atualizada;
     }
+
+    public void Dispose() => TempoReal.ViagemAtualizada -= AoAtualizarViagem;
 
     private void Informar(string mensagem)
     {

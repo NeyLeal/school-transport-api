@@ -2,6 +2,8 @@
 @implements IDisposable
 @inject SessaoService Sessao
 @inject NavigationManager Navegacao
+@inject TempoRealService TempoReal
+@inject NotificacoesPush Push
 
 @if (!_carregada)
 {
@@ -61,6 +63,7 @@ else
         await Sessao.CarregarAsync();
         _carregada = true;
         GarantirRotaPermitida();
+        _ = SincronizarServicosAsync();
     }
 
     private void AoNavegar(object? sender, LocationChangedEventArgs e) => GarantirRotaPermitida();
@@ -68,7 +71,21 @@ else
     private void AoAlterarSessao()
     {
         GarantirRotaPermitida();
+        _ = SincronizarServicosAsync();
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SincronizarServicosAsync()
+    {
+        if (Sessao.Autenticado)
+        {
+            await TempoReal.ConectarAsync();
+            await Push.RegistrarAsync();
+        }
+        else
+        {
+            await TempoReal.DesconectarAsync();
+        }
     }
 
     private void GarantirRotaPermitida()
@@ -84,6 +101,8 @@ else
 
     private async Task SairAsync()
     {
+        // Remove o aparelho antes de perder o token, para não receber avisos de outra conta.
+        await Push.RemoverAsync();
         await Sessao.SairAsync();
     }
 
