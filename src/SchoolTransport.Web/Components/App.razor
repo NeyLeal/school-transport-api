@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#23262b" />
+    <base href="/" />
+    <title>SchoolTransport</title>
+    <link rel="stylesheet" href="@Assets["_content/SchoolTransport.UI/app.css"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="RenderModeSemPrerender" />
+</head>
+
+<body>
+    <Routes @rendermode="RenderModeSemPrerender" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    private static readonly IComponentRenderMode RenderModeSemPrerender = new InteractiveServerRenderMode(prerender: false);
+}

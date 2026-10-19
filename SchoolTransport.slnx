@@ -5,6 +5,8 @@
     <Project Path="src/SchoolTransport.Contracts/SchoolTransport.Contracts.csproj" />
     <Project Path="src/SchoolTransport.Domain/SchoolTransport.Domain.csproj" />
     <Project Path="src/SchoolTransport.Infrastructure/SchoolTransport.Infrastructure.csproj" />
+    <Project Path="src/SchoolTransport.UI/SchoolTransport.UI.csproj" />
+    <Project Path="src/SchoolTransport.Web/SchoolTransport.Web.csproj" />
     <Project Path="src/SchoolTransport.Worker/SchoolTransport.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
