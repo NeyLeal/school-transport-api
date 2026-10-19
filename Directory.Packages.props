@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
@@ -18,6 +19,11 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.7" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
+    <!-- Transitivas fixadas por segurança -->
+    <!-- Microsoft.Data.SqlClient → Pkcs: GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7 -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <!-- Microsoft.AspNetCore.OpenApi → OpenApi: GHSA-v5pm-xwqc-g5wc -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
